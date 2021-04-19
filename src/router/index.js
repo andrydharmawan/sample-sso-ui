@@ -16,10 +16,7 @@ const routes = [
         path: '/',
         name: 'home',
         meta: {
-            title: "Home",
-            breadcrumb: [{
-                title: "Home"
-            }]
+            title: "Home"
         },
         component: () => import('../views/Home.vue')
     },
@@ -27,13 +24,7 @@ const routes = [
         path: '/about',
         name: 'about',
         meta: {
-            title: "About",
-            breadcrumb: [{
-                title: "Home",
-                to: "/"
-            }, {
-                title: "About"
-            }]
+            title: "About"
         },
         component: () => import('../views/About.vue')
     }
@@ -69,7 +60,7 @@ router.beforeEach(async ({ name, params, meta }, from, next) => {
                     setTimeout(e => ssoUI.login(name), 1000)
                 }
             });
-
+            document.title = `${meta.title} | Sample Project`
             next();
         }
         else if (ssotoken && !apitoken) next(`/authentication`)
