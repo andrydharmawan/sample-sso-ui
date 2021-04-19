@@ -1,7 +1,9 @@
 import { createStore } from 'vuex'
+import uuid from "uuid/v1";
 
 export default createStore({
     state: {
+        id: uuid(),
         loading: false,
         processSSO: false,
         messageErrorSSO: null,
@@ -9,6 +11,9 @@ export default createStore({
     mutations: {
         loading(state, isLoad) {
             state.loading = isLoad;
+        },
+        id(state, isLoad) {
+            state.id = isLoad;
         },
         messageErrorSSO(state, value) {
             state.messageErrorSSO = value;
@@ -18,6 +23,9 @@ export default createStore({
         }
     },
     getters: {
+        id({ id }) {
+            return id;
+        },
         loading({ loading }) {
             return loading;
         },

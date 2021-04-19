@@ -3,6 +3,10 @@ import uuid from 'uuid/v1';
 import moment from 'moment';
 import { ssoHelper } from '../helper/sso';
 
+export function refresh() {
+    store.commit("id", uuid())
+}
+
 export function jsonCopy(data) {
     return data ? JSON.parse(JSON.stringify(data)) : null;
 }

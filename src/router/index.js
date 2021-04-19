@@ -1,7 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-
-import { isArray, isBase64, ssoUI } from "../lib"
-import { ssoHelper } from "../helper/sso"
+import { isBase64, ssoUI } from "../lib"
 import store from "../store"
 import { notification } from "ant-design-vue";
 
@@ -17,11 +15,26 @@ const routes = [
     {
         path: '/',
         name: 'home',
+        meta: {
+            title: "Home",
+            breadcrumb: [{
+                title: "Home"
+            }]
+        },
         component: () => import('../views/Home.vue')
     },
     {
         path: '/about',
         name: 'about',
+        meta: {
+            title: "About",
+            breadcrumb: [{
+                title: "Home",
+                to: "/"
+            }, {
+                title: "About"
+            }]
+        },
         component: () => import('../views/About.vue')
     }
 ]

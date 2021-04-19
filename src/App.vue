@@ -1,14 +1,11 @@
 <template>
-    <div v-if="!loading && !messageErrorSSO">
-        <navigation />
-        <router-view />
-    </div>
+    <layout v-if="!loading && !messageErrorSSO" />
     <loading v-else />
 </template>
 <script>
 import { mapState } from "vuex";
-import Loading from "./components/Loading";
-import Navigation from "./components/Navigation";
+import { Loading } from "./components";
+import Layout from "./layouts"
 import { ssoUI, isArray } from "./lib";
 import { notification } from "ant-design-vue";
 import store from "./store";
@@ -17,13 +14,11 @@ import { SocketService } from "./helper/socket";
 export default {
     components: {
         Loading,
-        Navigation
+        Layout
     },
     computed: mapState(["messageErrorSSO", "loading"]),
     async mounted(){
-        console.log("asdkjabsdkas")
         SocketService.on("logout-sso-ui", async (data) => {
-            console.log(data, "data-------------------")
             const { userid } = ssoUI.get() || {};
             if(typeof data === "object"){
                 if(data.userid === userid){
