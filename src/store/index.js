@@ -3,6 +3,7 @@ import { createStore } from 'vuex'
 export default createStore({
     state: {
         loading: false,
+        processSSO: false,
         messageErrorSSO: null,
     },
     mutations: {
@@ -11,6 +12,9 @@ export default createStore({
         },
         messageErrorSSO(state, value) {
             state.messageErrorSSO = value;
+        },
+        processSSO(state, value) {
+            state.processSSO = value;
         }
     },
     getters: {
@@ -19,6 +23,9 @@ export default createStore({
         },
         messageErrorSSO({ messageErrorSSO }) {
             return messageErrorSSO;
+        },
+        processSSO({ processSSO }) {
+            return processSSO;
         }
     }
 })

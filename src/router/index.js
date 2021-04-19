@@ -44,53 +44,13 @@ router.beforeEach(async ({ name, params, meta }, from, next) => {
         next(`/authentication`)
     }
     else if (name === "authentication-without-key") {
-        const { applicationrole, ssotoken, apitoken, applicationname, userid, statuscode, statusdesc } = ssoUI.get();
-
-        store.commit("loading", true);
-
-        if (!userid) ssoUI.login(name);
-
-        if (statuscode === "0000") {
-            if (ssotoken && apitoken) next("/")
-            else if (!ssotoken && !apitoken) await ssoUI.login();
-
-            if (!isArray(applicationrole, 0)) {
-                store.commit("messageErrorSSO", "You don't have role in application, try to sign in");
-            }
-            else {
-                const { rolename } = applicationrole[0];
-                const { status, data = {}, message } = await ssoHelper.generateApiToken({
-                    userid,
-                    applicationname,
-                    rolename
-                })
-
-                if (status) {
-
-                    const { apitoken } = data;
-
-                    await ssoUI.set({
-                        rolename,
-                        apitoken
-                    }, false)
-
-                    let to = ssoUI.redirectGet();
-
-                    store.commit("loading", false);
-
-                    next({ name: to })
-                }
-                else store.commit("messageErrorSSO", message);
-            }
-        }
-        else store.commit("messageErrorSSO", statusdesc);
-
+        await ssoUI.generateApiToken({ next })
         next();
     }
     else {
         const { ssotoken, apitoken } = await ssoUI.get() || {};
         if (ssotoken && apitoken) {
-            ssoUI.checkSession().then(isValid => {
+            if(!store.state.processSSO) ssoUI.checkSession().then(isValid => {
                 if (!isValid) {
                     notification.info({ message: "Info", description: "Your session terminated unexpectedly" });
                     setTimeout(e => ssoUI.login(name), 1000)

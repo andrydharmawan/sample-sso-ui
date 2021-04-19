@@ -80,16 +80,16 @@ export var ssoUI = {
             }
             else {
                 if(loading) store.commit("loading", true);
-                // store.commit("isCheckSession", true)
+                store.commit("processSSO", true)
 
                 const { data, message, status } = await ssoHelper.checkSession({
                     userid,
                     ssotoken,
                     apitoken
                 });
-                // store.commit("isCheckSession", false)
 
                 if(loading) store.commit("loading", false);
+                store.commit("processSSO", false)
 
                 const { sessionstatus  } = data;
     
@@ -102,32 +102,49 @@ export var ssoUI = {
             return await ssoUI.checkSession(options);
         }
     },
-    generateApiToken: async () => {
-        try{
-            const dt = await ssoUI.get();
-            if(!dt){
-                store.commit("messageErrorSSO", "You don't have role in application, try to sign in");
-                return false
-            }
+    generateApiToken: async ({ next }) => {
+        const { applicationrole, ssotoken, apitoken, applicationname, userid, statuscode, statusdesc } = ssoUI.get();
 
-            let isError = false;
-            Object.keys(dt).forEach(field => { if(!dt[field]) isError = true; })
-            if(isError){
-                store.commit("messageErrorSSO", "Something went wrong, try to sign in");
-                return false
+        store.commit("loading", true);
+        store.commit("processSSO", true);
+
+        if (!userid) ssoUI.login(name);
+
+        if (statuscode === "0000") {
+            if (ssotoken && apitoken) next("/")
+            else if (!ssotoken && !apitoken) await ssoUI.login();
+
+            if (!isArray(applicationrole, 0)) {
+                store.commit("messageErrorSSO", "You don't have role in application, try to sign in");
             }
             else {
-                const { data = {}, message, status } = await ssoHelper.generateApiToken(dt) || {};
-                const { sessionstatus  } = data;
-    
-                if(!sessionstatus && !status && message) store.commit("messageErrorSSO", message);
-    
-                return sessionstatus;
+                const { rolename } = applicationrole[0];
+                const { status, data = {}, message } = await ssoHelper.generateApiToken({
+                    userid,
+                    applicationname,
+                    rolename
+                })
+
+                if (status) {
+
+                    const { apitoken } = data;
+
+                    await ssoUI.set({
+                        rolename,
+                        apitoken
+                    }, false)
+
+                    let to = ssoUI.redirectGet();
+
+                    store.commit("loading", false);
+                    store.commit("processSSO", false);
+
+                    next({ name: to })
+                }
+                else store.commit("messageErrorSSO", message);
             }
         }
-        catch(err){
-            return false;
-        }
+        else store.commit("messageErrorSSO", statusdesc);
     },
     redirectSet: (to) => {
         if(to === "authentication-without-key" || to === "authentication") to = "home";
