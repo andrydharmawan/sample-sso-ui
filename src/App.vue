@@ -1,5 +1,5 @@
 <template>
-    <layout v-if="!loading && !messageErrorSSO" />
+    <layout v-if="!loading && !messageErrorSSO" :key="$store.state.id"/>
     <loading v-else />
 </template>
 <script>
