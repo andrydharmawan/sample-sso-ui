@@ -7,19 +7,23 @@ export default createStore({
         loading: false,
         processSSO: false,
         messageErrorSSO: null,
+        idleTime: 15 * 60000
     },
     mutations: {
+        id(state, isLoad) {
+            state.id = isLoad;
+        },
         loading(state, isLoad) {
             state.loading = isLoad;
         },
-        id(state, isLoad) {
-            state.id = isLoad;
+        processSSO(state, value) {
+            state.processSSO = value;
         },
         messageErrorSSO(state, value) {
             state.messageErrorSSO = value;
         },
-        processSSO(state, value) {
-            state.processSSO = value;
+        idleTime(state, value) {
+            state.idleTime = value;
         }
     },
     getters: {
@@ -34,6 +38,9 @@ export default createStore({
         },
         processSSO({ processSSO }) {
             return processSSO;
+        },
+        idleTime({ idleTime }) {
+            return idleTime;
         }
     }
 })

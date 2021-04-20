@@ -1,21 +1,33 @@
 <template>
     <div class="about">
-        <a-descriptions
-            title="About Sample Project Single Sign-on Universitas Indonesia"
-            bordered
-        >
+        <a-descriptions title="About Sample Project Single Sign-on Universitas Indonesia" bordered>
             <a-descriptions-item label="Name" span="1.5">{{name}}</a-descriptions-item>
             <a-descriptions-item label="Version" span="1.5">{{version}}</a-descriptions-item>
             <a-descriptions-item label="Script" span="3">
-                <div v-for="{ key, value } of scripts" :key="key">
-                    <b>{{key}}</b>: {{value}}
-                </div>
+                <table width="100%">
+                    <tr v-for="{ key, value } of scripts" :key="key">
+                        <td style="width:30%;">
+                            <a-tag><b>{{key}}</b></a-tag>
+                        </td>
+                        <td class="d-flex">
+                            : <div class="border rounded w-100 ml-2 pl-2">
+                                {{value}}
+                            </div>
+                        </td>
+                    </tr>
+                </table>
             </a-descriptions-item>
             <a-descriptions-item label="Dependencies" span="3">
                 <table width="100%">
                     <tr v-for="{ key, value } of dependencies" :key="key">
-                        <td style="width:30%;"><b>{{key}}</b></td>
-                        <td><div class="border rounded">{{value}}</div></td>
+                        <td style="width:30%;">
+                            <a-tag><b>{{key}}</b></a-tag>
+                        </td>
+                        <td class="d-flex">
+                            : <div class="border rounded w-100 ml-2 pl-2">
+                                {{value}}
+                            </div>
+                        </td>
                     </tr>
                 </table>
             </a-descriptions-item>

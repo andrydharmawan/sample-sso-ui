@@ -1,19 +1,21 @@
 <template>
-    <a-layout-header class="bg-white p-0 text-right pr-3">
-        <a-dropdown :trigger="['click']" class="p-1 pl-3 pr-3">
-            <a-tag class="ant-dropdown-link" @click="e => e.preventDefault()" color="#108ee9">{{text(rolename)}} <DownOutlined /></a-tag>
+    <a-layout-header class="bg-white p-0 pr-2">
+        <a-dropdown :trigger="['click']" class="float-left">
+            <fieldset class="p-0 m-0" style="margin-top: -7px !important;">
+                <legend class="p-0 m-0 pl-3" style="font-size:12px;height: 14px;">Role :</legend>
+                <a-button :loading="loading" class="ant-dropdown-link" type="link" @click="e => e.preventDefault()" color="#108ee9">{{text(rolename)}} <DownCircleOutlined class="icon-role" /></a-button>
+            </fieldset>
             <template #overlay>
                 <a-menu>
-                    <a-menu-item @click="e => choosed(app)" v-for="(app, index) in applicationrole" :key="app.rolename">
-                        <CheckCircleOutlined v-if="rolename === app.rolename" class="icon-role text-green" />
-                        <SwapOutlined v-else class="icon-role text-blue" />
+                    <a-menu-item @click="e => choosed(app)" v-for="(app) in applicationrole" :key="app.rolename">
+                        <CheckCircleOutlined v-if="rolename === app.rolename" class="icon-list-role text-green float-left" />
+                        <SwapOutlined v-else class="icon-list-role text-blue float-left" />
                         {{text(app.rolename)}}
-                        <hr class="m-0 p-0 mt-2" v-show="index < applicationrole.length - 1"/>
                     </a-menu-item>
                 </a-menu>
             </template>
         </a-dropdown>
-        <a-button @click="logout" class="border-0">
+        <a-button @click="logout" class="shadow-none border-0 float-right mt-3">
             <PoweroffOutlined />
             Logout
         </a-button>
@@ -22,7 +24,7 @@
 <script>
 import {
     PoweroffOutlined,
-    DownOutlined,
+    DownCircleOutlined,
     SwapOutlined,
     CheckCircleOutlined
 } from '@ant-design/icons-vue';
@@ -33,24 +35,18 @@ import { ssoHelper } from "../helper/sso";
 export default {
     components: {
         PoweroffOutlined,
-        DownOutlined,
+        DownCircleOutlined,
         SwapOutlined,
         CheckCircleOutlined
     },
     data(){
         
-        const { userid, rolename, applicationrole } = ssoUI.get() || {};
+        const { rolename, applicationrole } = ssoUI.get() || {};
         
         return {
-            userid,
             rolename,
             applicationrole,
-            menu: [],
-            spinning: false,
-            options: {
-                height: "100vh",
-                size: 0
-            }
+            loading: false
         };
     },
     methods: {
@@ -59,8 +55,7 @@ export default {
 
             const { applicationname, userid } = ssoData;
 
-            this.spinning = true;
-
+            this.loading = true;
             if(ssoData.apitoken){
                 await ssoHelper.revoke({
                     applicationname,
@@ -74,8 +69,7 @@ export default {
                 applicationname,
                 rolename
             }, async (status, data = {}, description) => {
-                this.spinning = false;
-
+                this.loading = false;
                 if(status){
                     const { apitoken } = data;
 
@@ -125,15 +119,20 @@ export default {
     .item:active {
         background-color:#e6e6e6;
     }
-    .icon-role{
+    .icon-list-role{
         font-size:15px;
         float:left;
-        margin-top:3px;
+        margin-top:5px !important;
     }
     .text-green{
         color: #00a65a !important;
     }
     .text-blue{
         color: #0073b7 !important;
+    }
+    .icon-role{
+        margin-top: 2px !important;
+        float: right;
+        margin-left:5px !important;
     }
 </style>

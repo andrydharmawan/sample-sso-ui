@@ -21,6 +21,7 @@
 import { Navigation, Sidebar } from "../components"
 import { defineComponent, ref } from 'vue';
 export default defineComponent({
+    name: "layout",
     components: {
         Navigation,
         Sidebar
