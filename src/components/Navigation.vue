@@ -41,7 +41,7 @@ export default {
     },
     data(){
         
-        const { rolename, applicationrole } = ssoUI.get() || {};
+        const { rolename, applicationrole = [] } = ssoUI.get() || {};
         
         return {
             rolename,
@@ -68,7 +68,7 @@ export default {
                 userid,
                 applicationname,
                 rolename
-            }, async (status, data = {}, description) => {
+            }, async ({ status, data = {}, message }) => {
                 this.loading = false;
                 if(status){
                     const { apitoken } = data;
@@ -80,10 +80,10 @@ export default {
 
                     refresh()
                 }
-                else notification.error({ message: "Error", description });
+                else notification.error({ message: "Error", description: message });
             })
         },
-        text(value){
+        text(value = ""){
             if(value.includes(".")) value = value.split(".")[1];
             return value;
         },

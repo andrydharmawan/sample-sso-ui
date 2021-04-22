@@ -4,13 +4,10 @@ import moment from 'moment';
 import { ssoHelper } from '../helper/sso';
 import { SocketService } from "../helper/socket";
 import { notification, Modal } from "ant-design-vue";
+import Cookies from 'js-cookie';
 
 export function refresh() {
     store.commit("id", uuid())
-}
-
-export function jsonCopy(data) {
-    return data ? JSON.parse(JSON.stringify(data)) : null;
 }
 
 export function isArray(data, length) {
@@ -50,66 +47,51 @@ export function isBase64(str) {
 }
 
 export var ssoUI = {
-    set: async (value, isBase64 = true) => {
-        localStorage.setItem("auth", isBase64 ? value : base64.encode({ sessionresult: Object.assign(ssoUI.get(), value) }));
+    set: (value, isBase64 = true) => {
+        Cookies.set("auth", isBase64 ? value : base64.encode({ sessionresult: Object.assign(ssoUI.get(), value) }));
     },
-    get: (key) => {
-        let ssokey = localStorage.getItem("auth");
+    get: (opt) => {
+        let { key, ssokey } = opt || {};
+        if(!ssokey) ssokey = Cookies.get("auth");
 
-        if(!ssokey) return;
+        if(!ssokey) return
 
         const { sessionresult = {} } = base64.decode(ssokey);
-
-        const { userid, ssotoken, applicationname, applicationrole } = sessionresult;
-        if(!isArray(applicationrole, 0) || !userid || !ssotoken || !applicationname) return;
-
-        if(key) return sessionresult[key];
-        else return sessionresult;
+        
+        return key ? sessionresult[key] : sessionresult;
     },    
     checkSession: async (options) => {
         const { loading = false } = options || {};
-        try{
-            const { userid, ssotoken, apitoken, applicationrole } = ssoUI.get();
-            if(!isArray(applicationrole, 0)){
-                store.commit("messageErrorSSO", "You don't have role in application, try to sign in");
-                return false
+        const { userid, ssotoken, apitoken } = ssoUI.get() || {};
+        
+        if(userid && ssotoken && apitoken) {
+            if(loading) store.commit("loading", true);
+            store.commit("processSSO", true)
+
+            const { data } = await ssoHelper.checkSession({
+                userid,
+                ssotoken,
+                apitoken
+            });
+
+            if(loading) store.commit("loading", false);
+
+            store.commit("processSSO", false)
+
+            const { sessionstatus  } = data;
+
+            if (!sessionstatus) {
+                notification.info({ message: "Info", description: "Your session terminated unexpectedly" });
+                setTimeout(e => ssoUI.login(name), 1000)
             }
-
-            if(!userid || !ssotoken){
-                store.commit("messageErrorSSO", "Something went wrong, try to sign in");
-                return false
-            }
-            else {
-                if(loading) store.commit("loading", true);
-                store.commit("processSSO", true)
-
-                const { data, message, status } = await ssoHelper.checkSession({
-                    userid,
-                    ssotoken,
-                    apitoken
-                });
-
-                if(loading) store.commit("loading", false);
-                store.commit("processSSO", false)
-
-                const { sessionstatus  } = data;
-    
-                if(!sessionstatus && !status && message) store.commit("messageErrorSSO", message);
-    
-                return sessionstatus;
-            }
-        }
-        catch(err){
-            return await ssoUI.checkSession(options);
         }
     },
-    generateApiToken: async ({ next }) => {
-        const { applicationrole, ssotoken, apitoken, applicationname, userid, statuscode, statusdesc } = ssoUI.get();
+    generateApiToken: async ({ next, ssokey }) => {
+        ssoUI.set(ssokey);
+        const { applicationrole, ssotoken, apitoken, applicationname, userid, statuscode, statusdesc } = ssoUI.get({ ssokey });
 
         store.commit("loading", true);
         store.commit("processSSO", true);
-
-        if (!userid) ssoUI.login(name);
 
         if (statuscode === "0000") {
             if (ssotoken && apitoken) next("/")
@@ -120,15 +102,17 @@ export var ssoUI = {
             }
             else {
                 const { rolename } = applicationrole[0];
-                const { status, data = {}, message } = await ssoHelper.generateApiToken({
+                const { status, data, message } = await ssoHelper.generateApiToken({
                     userid,
                     applicationname,
                     rolename
                 })
 
+                store.commit("processSSO", false);
+
                 if (status) {
 
-                    const { apitoken } = data;
+                    const { apitoken } = data || {};
 
                     await ssoUI.set({
                         rolename,
@@ -136,9 +120,7 @@ export var ssoUI = {
                     }, false)
 
                     let to = ssoUI.redirect.get();
-
                     store.commit("loading", false);
-                    store.commit("processSSO", false);
 
                     next({ name: to })
                 }
@@ -146,9 +128,11 @@ export var ssoUI = {
             }
         }
         else store.commit("messageErrorSSO", statusdesc);
+        next();
     },
     login: async (to) => {
         if(to) await ssoUI.redirect.set(to);
+
         await ssoUI.clear();
 
         window.location = process.env.VUE_APP_SSO_LOGIN;
@@ -167,23 +151,23 @@ export var ssoUI = {
         }
     },
     clear: async () => {
-        localStorage.removeItem("auth");
+        Cookies.remove("auth");
     },
     redirect: {
         set: (to) => {
-            if(to === "authentication-without-key" || to === "authentication") to = "home";
-            sessionStorage.setItem("redirect-page", to);
+            if(to === "authentication") to = "home";
+            Cookies.set("redirect-page", to);
         },
         get: () => {
-            return sessionStorage.getItem("redirect-page");
+            return Cookies.get("redirect-page");
         },
         remove: () => {
-            sessionStorage.removeItem("redirect-page");
+            Cookies.remove("redirect-page");
         }
     },
     storage: () => {
         const { keys } = sessionStorage || {};
-        let { isactive, closedate } = localStorage || {};
+        let { isactive, closedate } = Cookies.get() || {};
 
         if(!isactive) isactive = [];
         else isactive = JSON.parse(isactive)
@@ -212,7 +196,7 @@ export var ssoUI = {
                 isactive: true
             })
 
-            localStorage.setItem("isactive", JSON.stringify(isactive));
+            Cookies.set("isactive", JSON.stringify(isactive));
         }
         
         window.onunload = async () => {
@@ -220,26 +204,18 @@ export var ssoUI = {
 
             if(index !== -1) isactive.splice(index, 1);
             
-            localStorage.setItem("isactive", JSON.stringify(isactive));
+            Cookies.set("isactive", JSON.stringify(isactive));
             
             if(isactive.find(x => x.isactive)) return
             else {
                 const closedate = moment().format("DD/MM/YYYY HH:mm:ss");
-                if(ssoUI.get()) localStorage.setItem("closedate", closedate);
+                if(ssoUI.get()) Cookies.set("closedate", closedate);
             }
         }
     },
     initialize: {
         created(){
-            const { ssotoken, apitoken, applicationrole } = ssoUI.get() || {};
-            if(ssotoken && apitoken && isArray(applicationrole, 0)){
-                ssoUI.checkSession({ loading: true }).then(isValid => {     
-                    if(!isValid) { 
-                        notification.info({ message: "Info", description: "Your session terminated unexpectedly" });
-                        setTimeout(ssoUI.login, 1000)
-                    } 
-                });
-            }
+            ssoUI.checkSession({ loading: true });
         },
         async mounted(){
             SocketService.on("logout-sso-ui", async (data) => {
@@ -269,7 +245,7 @@ export var ssoUI = {
                 isactive: true
             })
 
-            localStorage.setItem("isactive", JSON.stringify(isactive));
+            Cookies.set("isactive", JSON.stringify(isactive));
 
             if(closedate){
                 var now  = moment().format("DD/MM/YYYY HH:mm:ss");
@@ -283,7 +259,7 @@ export var ssoUI = {
                 }
             }
             
-            localStorage.removeItem("closedate")
+            Cookies.remove("closedate")
         },
         watch: {
             isIdle(idle){
@@ -301,7 +277,7 @@ export var ssoUI = {
                     isactive: false
                 })
 
-                localStorage.setItem("isactive", JSON.stringify(isactive));
+                Cookies.set("isactive", JSON.stringify(isactive));
 
                 if(isactive.filter(x => x.isactive).length) return
                 else {
@@ -350,8 +326,8 @@ export var ssoUI = {
                     isactive: true
                 })
 
-                localStorage.setItem("isactive", JSON.stringify(isactive));
-                localStorage.removeItem("closedate");
+                Cookies.set("isactive", JSON.stringify(isactive));
+                Cookies.remove("closedate");
             }
         }
     }

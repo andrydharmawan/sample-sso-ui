@@ -9,10 +9,6 @@ const routes = [
         name: 'authentication'
     },
     {
-        path: '/authentication',
-        name: 'authentication-without-key'
-    },
-    {
         path: '/',
         name: 'home',
         meta: {
@@ -40,30 +36,19 @@ router.beforeEach(async ({ name, params, meta }, from, next) => {
         const { ssokey } = params;
         if (!isBase64(ssokey)) {
             notification.error({ message: "Error", description: "SSO Key not valid" });
-            setTimeout(e => ssoUI.login(name), 1000)
+            setTimeout(() => ssoUI.login(name), 1000)
         }
         
-        ssoUI.set(ssokey);
-        
-        next(`/authentication`)
-    }
-    else if (name === "authentication-without-key") {
-        await ssoUI.generateApiToken({ next })
-        next();
+        await ssoUI.generateApiToken({ next, ssokey })
     }
     else {
-        const { ssotoken, apitoken } = await ssoUI.get() || {};
+        const { ssotoken, apitoken } = ssoUI.get() || {};
         if (ssotoken && apitoken) {
-            if(!store.state.processSSO) ssoUI.checkSession().then(isValid => {
-                if (!isValid) {
-                    notification.info({ message: "Info", description: "Your session terminated unexpectedly" });
-                    setTimeout(e => ssoUI.login(name), 1000)
-                }
-            });
+            ssoUI.checkSession();
+
             document.title = `${meta.title} | Sample Project`
             next();
         }
-        else if (ssotoken && !apitoken) next(`/authentication`)
         else await ssoUI.login(name);
     }
 });

@@ -8,51 +8,45 @@ import {
 class BaseHelper {
     static url = ""
 
-    static handleResponse = async (response, callback, config) => {
+    static handleResponse = async ({ data }, callback, config) => {
         const { success = true, error = true } = config;
 
         let { 
             status,
-            result,
-            paging 
-        } = response.data; 
+            result
+        } = data; 
 
         let {
-            responsecode = "9198",
+            responsecode,
             responsedesc
         } = status || {};
 
-        if(responsecode === "9198") responsedesc = "Response error, Please contact your administrator";
-
-        if (paging) result = {
-            result,
-            paging
-        };
-
-        const statusOk =  responsecode === "0000";
+        const statusOk = responsecode === "0000";
         
         if(success && statusOk) notification.success({ message: "Success", description: responsedesc })
         if(error && !statusOk) notification.error({ message: "Error", description: responsedesc })
         
-        if (callback) callback(statusOk, result, responsedesc);
-        else return { status: statusOk, data: result || response.data, message: responsedesc }
+        const response = { status: statusOk, data: result || data, message: responsedesc };
+        if (callback) callback(response);
+        else return response;
     }
 
     static async request(method, url, data, callback, config = {}) {
         const { auth = true } = config;
+        
         const { apitoken } = await ssoUI.get() || {};
+
         let headers = { "Content-Type": "application/json" }
 
         data.identity = identity();
 
         const client = axios.create({ baseURL: url, json: true });
 
-
         if(apitoken && auth) headers.Authorization = `Bearer ${apitoken}`;
 
         return client({ method, data, headers, responseType: "json", })
-            .then(async (response) => this.handleResponse(response, callback, config))
-            .catch(async error => this.handleResponse({ data: { status: { responsecode: error.response.status || "9198", responsedesc: error.message, }, result: null, } }, callback, config));
+            .then(async response => this.handleResponse(response, callback, config))
+            .catch(async error => this.handleResponse({ data: { status: { responsecode: error.response.status, responsedesc: error.message, }, result: null, } }, callback, config));
     }
 
     static post(url, data, callback, config) {
