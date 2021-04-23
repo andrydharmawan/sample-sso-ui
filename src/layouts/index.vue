@@ -20,7 +20,7 @@
 <script>
 import { Navigation, Sidebar } from "../components"
 import { defineComponent, ref } from 'vue';
-export default defineComponent({
+export default {
     name: "layout",
     components: {
         Navigation,
@@ -31,7 +31,7 @@ export default defineComponent({
             collapsed: ref(false)
         };
     },
-});
+};
 </script>
 <style>
 .logo {

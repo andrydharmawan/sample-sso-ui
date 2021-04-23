@@ -6,7 +6,10 @@ import { notification } from "ant-design-vue";
 const routes = [
     {
         path: '/authentication/:ssokey',
-        name: 'authentication'
+        name: 'authentication',
+        meta: {
+            title: "Authentication"
+        }
     },
     {
         path: '/',
@@ -32,6 +35,8 @@ const router = createRouter({
 })
 
 router.beforeEach(async ({ name, params, meta }, from, next) => {
+    document.title = `${meta.title} | Sample Project`;
+    
     if (name === "authentication") {
         const { ssokey } = params;
         if (!isBase64(ssokey)) {
@@ -46,7 +51,6 @@ router.beforeEach(async ({ name, params, meta }, from, next) => {
         if (ssotoken && apitoken) {
             if(!store.state.processSSO) ssoUI.checkSession();
 
-            document.title = `${meta.title} | Sample Project`
             next();
         }
         else await ssoUI.login(name);
