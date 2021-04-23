@@ -44,7 +44,7 @@ router.beforeEach(async ({ name, params, meta }, from, next) => {
     else {
         const { ssotoken, apitoken } = ssoUI.get() || {};
         if (ssotoken && apitoken) {
-            ssoUI.checkSession();
+            if(!store.state.processSSO) ssoUI.checkSession();
 
             document.title = `${meta.title} | Sample Project`
             next();
