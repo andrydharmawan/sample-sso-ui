@@ -29,6 +29,13 @@ export function isArray(data, length) {
 }
 
 export var base64 = {
+    isBase64: (value = "") => {
+        try {
+            return btoa(atob(value)) === value;
+        } catch (err) {
+            return false;
+        }
+    },
     decode: (value) => {
         return JSON.parse(atob(value));
     },
@@ -37,18 +44,27 @@ export var base64 = {
     }
 }
 
-export function isBase64(str) {
-    if (str ==='' || str.trim() ===''){ return false; }
-    try {
-        return btoa(atob(str)) == str;
-    } catch (err) {
-        return false;
+export function isSSOKey(value) {
+    try{
+        let result = base64.isBase64(value);
+        if(result){
+            const { sessionresult } = base64.decode(value) || {};
+            const { statuscode, userid, ssotoken, applicationname } = sessionresult || {};
+
+            if(!userid || !ssotoken || !applicationname || !statuscode) return false;
+            else if(applicationname !== process.env.VUE_APP_NAME) return false;
+        }
+
+        return result;
+    }
+    catch(err){
+        return false
     }
 }
 
 export var ssoUI = {
-    set: (value, isBase64 = true) => {
-        Cookies.set("auth", isBase64 ? value : base64.encode({ sessionresult: Object.assign(ssoUI.get(), value) }));
+    set: (value, isNew = true) => {
+        Cookies.set("auth", isNew ? value : base64.encode({ sessionresult: Object.assign(ssoUI.get(), value) }));
     },
     get: (opt) => {
         let { key, ssokey } = opt || {};
@@ -86,12 +102,19 @@ export var ssoUI = {
             }
         }
     },
-    generateApiToken: async ({ next, ssokey }) => {
-        ssoUI.set(ssokey);
-        const { applicationrole, ssotoken, apitoken, applicationname, userid, statuscode, statusdesc } = ssoUI.get({ ssokey });
-
+    generateApiToken: async ({ next, params, name }) => {
         store.commit("loading", true);
         store.commit("processSSO", true);
+
+        const { ssokey } = params;
+
+        if (!isSSOKey(ssokey)) {
+            notification.error({ message: "Error", description: "SSO Key not valid" });
+            setTimeout(() => ssoUI.login(name), 1000)
+        }
+
+        ssoUI.set(ssokey);
+        const { applicationrole, ssotoken, apitoken, applicationname, userid, statuscode, statusdesc } = ssoUI.get({ ssokey });
 
         if (statuscode === "0000") {
             if (ssotoken && apitoken) next("/")

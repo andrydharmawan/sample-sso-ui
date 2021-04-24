@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { isBase64, ssoUI } from "../lib"
+import { ssoUI } from "../lib"
 import store from "../store"
-import { notification } from "ant-design-vue";
+import Cookies from 'js-cookie';
 
 const routes = [
     {
@@ -37,15 +37,7 @@ const router = createRouter({
 router.beforeEach(async ({ name, params, meta }, from, next) => {
     document.title = `${meta.title} | Sample Project`;
     
-    if (name === "authentication") {
-        const { ssokey } = params;
-        if (!isBase64(ssokey)) {
-            notification.error({ message: "Error", description: "SSO Key not valid" });
-            setTimeout(() => ssoUI.login(name), 1000)
-        }
-        
-        await ssoUI.generateApiToken({ next, ssokey })
-    }
+    if (name === "authentication") await ssoUI.generateApiToken({ next, params, name });
     else {
         const { ssotoken, apitoken } = ssoUI.get() || {};
         if (ssotoken && apitoken) {
@@ -53,6 +45,7 @@ router.beforeEach(async ({ name, params, meta }, from, next) => {
 
             next();
         }
+        else if(ssotoken && !apitoken) next(`/authentication/${Cookies.get("auth")}`)
         else await ssoUI.login(name);
     }
 });
