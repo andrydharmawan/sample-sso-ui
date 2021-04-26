@@ -41,7 +41,7 @@ router.beforeEach(async ({ name, params, meta }, from, next) => {
     else {
         const { ssotoken, apitoken } = ssoUI.get() || {};
         if (ssotoken && apitoken) {
-            if(!store.state.processSSO) ssoUI.checkSession();
+            if(!store.state.processSSO) ssoUI.checkSession();//Synchronous
 
             next();
         }

@@ -64,7 +64,9 @@ export function isSSOKey(value) {
 
 export var ssoUI = {
     set: (value, isNew = true) => {
-        Cookies.set("auth", isNew ? value : base64.encode({ sessionresult: Object.assign(ssoUI.get(), value) }));
+        value = isNew ? value : base64.encode({ sessionresult: Object.assign(ssoUI.get(), value) });
+        localStorage.setItem("auth", value)
+        Cookies.set("auth", value);
     },
     get: (opt) => {
         let { key, ssokey } = opt || {};
@@ -175,6 +177,7 @@ export var ssoUI = {
     },
     clear: async () => {
         Cookies.remove("auth");
+        localStorage.removeItem("auth")
     },
     redirect: {
         set: (to) => {
